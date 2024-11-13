@@ -1,23 +1,18 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from transformers import pipeline
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for cross-origin requests
+CORS(app)
 
-@app.route('/api/data', methods=['GET'])
-def get_data():
-    # Example data
-    return jsonify({
-        "labels": ["Jan", "Feb", "Mar", "Apr", "May"],
-        "values": [10, 15, 30, 45, 60]
-    })
+# Load LLaMA or any other model you wish to use
+chatbot_pipeline = pipeline("text-generation", model="huggingface/llama-model")
 
 @app.route('/api/chat', methods=['POST'])
 def chat_response():
     user_message = request.json.get('message')
-    # Replace this with a Llama-based response logic
-    response = f"Echo: {user_message}"  # Example response
-    return jsonify({"response": response})
+    response = chatbot_pipeline(user_message, max_length=100, num_return_sequences=1)
+    return jsonify({"response": response[0]['generated_text']})
 
 if __name__ == '__main__':
     app.run(debug=True)
