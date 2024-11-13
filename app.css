@@ -1,0 +1,20 @@
+/* src/custom.css */
+.chat-window {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 10px;
+  height: 300px;
+  overflow-y: scroll;
+}
+
+.user-message {
+  text-align: right;
+  background-color: #f0f0f0;
+  margin: 5px 0;
+}
+
+.bot-message {
+  text-align: left;
+  background-color: #e0f7fa;
+  margin: 5px 0;
+}
