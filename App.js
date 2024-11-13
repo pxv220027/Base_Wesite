@@ -8,6 +8,7 @@ import AuthorizeRoute from './components/api-authorization/AuthorizeRoute';
 import ApiAuthorizationRoutes from './components/api-authorization/ApiAuthorizationRoutes';
 import { ApplicationPaths } from './components/api-authorization/ApiAuthorizationConstants';
 import DataVisualization from './components/DataVisualization';
+import ChatBot from './components/ChatBot';
 
 import './custom.css';
 
@@ -21,51 +22,62 @@ export default class App extends Component {
                 <Route path='/counter' component={Counter} />
                 <AuthorizeRoute path='/fetch-data' component={FetchData} />
                 <Route path='/data-visualization' component={DataVisualization} />
+                <Route path='/chat-bot' component={ChatBot} />
                 <Route path={ApplicationPaths.ApiAuthorizationPrefix} component={ApiAuthorizationRoutes} />
             </Layout>
         );
     }
 }
 
-// DataVisualization.js component
-import React from 'react';
-import { Line } from 'react-chartjs-2';
-import 'chart.js/auto';
+// ChatBot.js component
+import React, { useState } from 'react';
 
-const DataVisualization = () => {
-    const [chartData, setChartData] = useState(null);
+const ChatBot = () => {
+    const [messages, setMessages] = useState([]);
+    const [input, setInput] = useState('');
 
-    useEffect(() => {
-        // Fetch data from the Python backend (e.g., through an API endpoint)
-        fetch('/api/data')
-            .then(response => response.json())
-            .then(data => {
-                setChartData({
-                    labels: data.labels,
-                    datasets: [
-                        {
-                            label: 'Data from Python',
-                            data: data.values,
-                            borderColor: 'rgba(75, 192, 192, 1)',
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            borderWidth: 2,
-                        },
-                    ],
-                });
-            })
-            .catch(error => console.error('Error fetching data:', error));
-    }, []);
+    const handleSend = async () => {
+        if (input.trim() === '') return;
+
+        // Add the user's message to the conversation
+        setMessages([...messages, { sender: 'User', text: input }]);
+
+        try {
+            // Send the user's message to the Llama-based chatbot backend
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: input }),
+            });
+            const data = await response.json();
+
+            // Add the chatbot's response to the conversation
+            setMessages([...messages, { sender: 'User', text: input }, { sender: 'Bot', text: data.response }]);
+            setInput('');
+        } catch (error) {
+            console.error('Error communicating with chatbot:', error);
+        }
+    };
 
     return (
         <div>
-            <h2>Data Visualization</h2>
-            {chartData ? (
-                <Line data={chartData} options={{ responsive: true, maintainAspectRatio: false }} />
-            ) : (
-                    <p>Loading...</p>
-                )}
+            <h2>Chat Bot</h2>
+            <div className="chat-window">
+                {messages.map((msg, index) => (
+                    <div key={index} className={msg.sender === 'User' ? 'user-message' : 'bot-message'}>
+                        <strong>{msg.sender}:</strong> {msg.text}
+                    </div>
+                ))}
+            </div>
+            <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Type a message..."
+            />
+            <button onClick={handleSend}>Send</button>
         </div>
     );
 };
 
-export default DataVisualization;
+export default ChatBot;
